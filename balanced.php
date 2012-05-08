@@ -42,13 +42,18 @@ class Balanced {
 		$ch = curl_init('https://api.balancedpayments.com'.$uri);
 		curl_setopt($ch, CURLOPT_USERPWD, BALANCED_KEY);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		if ($method == 'POST') {
-			$json = json_encode($data);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-				'Content-Type: application/json',
-				'Content-Length: '.strlen($json)
-			));
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+		switch($method) {
+			case 'POST':
+				$json = json_encode($data);
+				curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json',
+					'Content-Length: '.strlen($json)
+				));
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+				break;
+			case 'PUT':
+				curl_setopt($ch, CURLOPT_PUT, true);
+				break;
 		}
 		$out = curl_exec($ch);
 		curl_close($ch);
@@ -56,33 +61,40 @@ class Balanced {
 	}
 
 	/**
+	 * Parse out the ID value from the given URI
 	 *
-	 * @param type $str
-	 * @return type
+	 * @param string $str
+	 *		The URI to get the ID value from
+	 *
+	 * @return string
+	 *		Returns the ID value
 	 */
 	private function parse_id($str) {
 		return substr($str, strrpos($str, '/')+1);
 	}
 
 	/**
+	 * Create an API key
 	 *
-	 * @return type
+	 * @return string
 	 */
 	public function create_api_key() {
 		return $this->send_request('POST', '/v1/api_keys');
 	}
 
 	/**
+	 * Create a marketplace
 	 *
-	 * @return type
+	 * @return string
 	 */
 	public function create_marketplace() {
 		return $this->send_request('POST', '/v1/marketplaces');
 	}
 
 	/**
+	 * Get the marketplace info
 	 *
-	 * @return type
+	 * @return array
 	 */
 	public function get_marketplace() {
 		return $this->send_request('GET', $this->marketplace_uri);
@@ -103,10 +115,13 @@ class Balanced {
 	}
 
 	/**
-	 * Get a particular account
+	 * Get details for a particular account
 	 *
 	 * @param string $id
-	 * @return type
+	 *		The ID of the account to lookup
+	 *
+	 * @return array
+	 *		Retruns the account information
 	 */
 	public function get_account($id) {
 		return $this->send_request('GET', $this->marketplace_uri.'/accounts/'.$id);
@@ -116,8 +131,13 @@ class Balanced {
 	 * Get a set of accounts
 	 *
 	 * @param int $limit
+	 *		How many accounts to get
+	 *
 	 * @param int $offset
-	 * @return type
+	 *		Offset into list of accounts
+	 *
+	 * @return array
+	 *		Returns the account information
 	 */
 	public function get_accounts($limit = 10, $offset = 0) {
 		return $this->send_request('GET', $this->marketplace_uri.'/accounts?limit='.$limit.'&offset='.$offset);
@@ -127,8 +147,13 @@ class Balanced {
 	 * Create a hold on an account
 	 *
 	 * @param string $id
-	 * @param type $amount
-	 * @return type
+	 *		The ID of the account to put a hold on
+	 *
+	 * @param float $amount
+	 *		The amount to hold
+	 *
+	 * @return string
+	 *		Returns the ID value for the hold
 	 */
 	public function create_hold($id, $amount) {
 
@@ -150,9 +175,14 @@ class Balanced {
 	public function get_transactions($id) { return $this->send_request('GET', $this->marketplace_uri.'/accounts/'.$id.'/transactions'); }
 
 	/**
+	 * Void a hold
 	 *
-	 * @param type $id
-	 * @param type $hold_id
+	 * @param string $id
+	 *		The ID of the account
+	 *
+	 * @param string $hold_id
+	 *		The ID of the hold to void
+	 *
 	 * @return type
 	 */
 	public function void_hold($id, $hold_id) {
@@ -160,7 +190,15 @@ class Balanced {
 	}
 
 	/**
+	 * Refund a debit
 	 *
+	 * @param string $id
+	 *		The ID of the account
+	 *
+	 * @param string $debit_id
+	 *		The ID of the debit to refund
+	 *
+	 * @return type
 	 */
 	public function refund_debit($id, $debit_id) {
 		return $this->send_request('POST', $this->marketplace_uri.'/accounts/'.$id.'/debits/'.$debit_id.'/refunds');
@@ -175,9 +213,14 @@ class Balanced {
 	}
 
 	/**
+	 * Create a credit
 	 *
-	 * @param type $id
-	 * @param type $amount
+	 * @param string $id
+	 *		The ID of the account to credit
+	 *
+	 * @param float $amount
+	 *		The amount to credit
+	 *
 	 * @return type
 	 */
 	public function create_credit($id, $amount) {
